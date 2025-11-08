@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace MiNegocioAPI.model
 {
     public class Cliente
@@ -9,6 +11,7 @@ namespace MiNegocioAPI.model
         public string email { get; set; }
         public string dni { get; set; }
         public string? domicilio { get; set; }
+        [JsonIgnore]
         public ICollection<Turno> turnos { get; set; } = new List<Turno>();
 
         public Cliente() { }
