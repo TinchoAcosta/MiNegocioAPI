@@ -11,6 +11,7 @@ namespace MiNegocioAPI.model
         public int servicioPropioId { get; set; }
         public ServicioPropio servicioPropio { get; set; }
         public ICollection<Turno> turnos { get; set; } = new List<Turno>();
+        public bool estado { get; set; }
 
         public Promo() { }
         public Promo(int id, string descripcion, DateTime fechaFin, string? imagen, decimal? precioNuevo, string? condicion, int servicioPropioId) {

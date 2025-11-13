@@ -41,7 +41,10 @@ namespace MiNegocioAPI.Controllers
           DuracionMinutos = sp.duracionMinutos,
           Detalle = sp.servicioBase.detalle,
           Categoria = sp.servicioBase.categoria
+
       })
+      .OrderBy(sp => sp.Detalle)
+      .ThenBy(sp => sp.Detalle)
       .ToListAsync();
 
             if (serviciosPropios == null || serviciosPropios.Count == 0)
@@ -68,102 +71,102 @@ namespace MiNegocioAPI.Controllers
         }
 
         [HttpPost("crear")]
-public async Task<IActionResult> crearServicioPropio([FromBody] ServicioPropioDTO dto)
-{
-    try
-    {
-        if (dto == null)
-            return BadRequest("Datos inválidos.");
-
-        var idClaim = User.FindFirst("Id")?.Value;
-        if (string.IsNullOrEmpty(idClaim))
-            return Unauthorized("Token inválido.");
-        int usuarioId = int.Parse(idClaim);
-
-        var servicioBase = await contexto.ServicioBase
-            .FirstOrDefaultAsync(s =>
-                s.detalle == dto.Detalle &&
-                s.categoria == dto.Categoria);
-
-        if (servicioBase == null)
-            return StatusCode(404, "Error al encontrar el servicio base");
-
-        var existe = await contexto.ServicioPropio
-            .AnyAsync(sp => sp.usuarioId == usuarioId && sp.servicioId == servicioBase.id);
-
-        if (existe)
-            return Conflict("Ya existe un servicio propio del mismo tipo.");
-
-        var servicioPropio = new ServicioPropio
+        public async Task<IActionResult> crearServicioPropio([FromBody] ServicioPropioDTO dto)
         {
-            usuarioId = usuarioId,
-            servicioId = servicioBase.id,
-            precioBase = dto.PrecioBase,
-            duracionMinutos = dto.DuracionMinutos
-        };
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Datos inválidos.");
 
-        contexto.ServicioPropio.Add(servicioPropio);
-        await contexto.SaveChangesAsync();
+                var idClaim = User.FindFirst("Id")?.Value;
+                if (string.IsNullOrEmpty(idClaim))
+                    return Unauthorized("Token inválido.");
+                int usuarioId = int.Parse(idClaim);
 
-        // 🔹 Crear DTO de respuesta
-        var dtoRespuesta = new ServicioPropioDTO
+                var servicioBase = await contexto.ServicioBase
+                    .FirstOrDefaultAsync(s =>
+                        s.detalle == dto.Detalle &&
+                        s.categoria == dto.Categoria);
+
+                if (servicioBase == null)
+                    return StatusCode(404, "Error al encontrar el servicio base");
+
+                var existe = await contexto.ServicioPropio
+                    .AnyAsync(sp => sp.usuarioId == usuarioId && sp.servicioId == servicioBase.id);
+
+                if (existe)
+                    return Conflict("Ya existe un servicio propio del mismo tipo.");
+
+                var servicioPropio = new ServicioPropio
+                {
+                    usuarioId = usuarioId,
+                    servicioId = servicioBase.id,
+                    precioBase = dto.PrecioBase,
+                    duracionMinutos = dto.DuracionMinutos
+                };
+
+                contexto.ServicioPropio.Add(servicioPropio);
+                await contexto.SaveChangesAsync();
+
+                // 🔹 Crear DTO de respuesta
+                var dtoRespuesta = new ServicioPropioDTO
+                {
+                    Id = servicioPropio.id,
+                    Categoria = dto.Categoria,
+                    Detalle = dto.Detalle,
+                    PrecioBase = servicioPropio.precioBase,
+                    DuracionMinutos = servicioPropio.duracionMinutos
+                };
+
+                return Ok(dtoRespuesta);
+            }
+            catch (Exception ex)
+            {
+                var inner = ex.InnerException?.Message;
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        [HttpPut("editar")]
+        public async Task<IActionResult> editarServicioPropio([FromBody] ServicioPropioDTO dto)
         {
-            Id = servicioPropio.id,
-            Categoria = dto.Categoria,
-            Detalle = dto.Detalle,
-            PrecioBase = servicioPropio.precioBase,
-            DuracionMinutos = servicioPropio.duracionMinutos
-        };
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Datos inválidos.");
 
-        return Ok(dtoRespuesta);
-    }
-    catch (Exception ex)
-    {
-        var inner = ex.InnerException?.Message;
-        return StatusCode(500, "Error interno del servidor");
-    }
-}
+                var idClaim = User.FindFirst("Id")?.Value;
+                if (string.IsNullOrEmpty(idClaim))
+                    return Unauthorized("Token inválido.");
+                int usuarioId = int.Parse(idClaim);
 
-[HttpPut("editar")]
-public async Task<IActionResult> editarServicioPropio([FromBody] ServicioPropioDTO dto)
-{
-    try
-    {
-        if (dto == null)
-            return BadRequest("Datos inválidos.");
+                var servicioPropio = await contexto.ServicioPropio
+                    .FirstOrDefaultAsync(sp => sp.id == dto.Id && sp.usuarioId == usuarioId);
 
-        var idClaim = User.FindFirst("Id")?.Value;
-        if (string.IsNullOrEmpty(idClaim))
-            return Unauthorized("Token inválido.");
-        int usuarioId = int.Parse(idClaim);
+                if (servicioPropio == null)
+                    return StatusCode(404, "Error al encontrar el servicio propio");
 
-        var servicioPropio = await contexto.ServicioPropio
-            .FirstOrDefaultAsync(sp => sp.id == dto.Id && sp.usuarioId == usuarioId);
+                servicioPropio.precioBase = dto.PrecioBase;
+                servicioPropio.duracionMinutos = dto.DuracionMinutos;
 
-        if (servicioPropio == null)
-            return StatusCode(404, "Error al encontrar el servicio propio");
+                await contexto.SaveChangesAsync();
 
-        servicioPropio.precioBase = dto.PrecioBase;
-        servicioPropio.duracionMinutos = dto.DuracionMinutos;
+                var dtoRespuesta = new ServicioPropioDTO
+                {
+                    Id = servicioPropio.id,
+                    Categoria = dto.Categoria,
+                    Detalle = dto.Detalle,
+                    PrecioBase = servicioPropio.precioBase,
+                    DuracionMinutos = servicioPropio.duracionMinutos
+                };
 
-        await contexto.SaveChangesAsync();
-        
-        var dtoRespuesta = new ServicioPropioDTO
-        {
-            Id = servicioPropio.id,
-            Categoria = dto.Categoria,
-            Detalle = dto.Detalle,
-            PrecioBase = servicioPropio.precioBase,
-            DuracionMinutos = servicioPropio.duracionMinutos
-        };
-
-        return Ok(dtoRespuesta);
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, "Error interno del servidor");
-    }
-}
+                return Ok(dtoRespuesta);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
 
 
 
