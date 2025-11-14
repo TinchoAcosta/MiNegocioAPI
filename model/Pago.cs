@@ -7,7 +7,7 @@ namespace MiNegocioAPI.model
         public decimal monto { get; set; }
         public string metodoDePago { get; set; }
         public int turnoId { get; set; }
-        public Turno turno { get; set; }
+        public Turno? turno { get; set; }
 
         public Pago() { }
         public Pago(int id, DateTime fecha, decimal monto, string metodoDePago, int turnoId) {

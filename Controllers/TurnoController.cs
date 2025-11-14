@@ -71,5 +71,56 @@ namespace MiNegocioAPI.Controllers
 
             return Ok(turnos);
         }
+
+        [HttpGet("pagoPendiente")]
+        public async Task<ActionResult<List<Turno>>> getTurnosPagoPendiente()
+        {
+            var idClaim = User.FindFirst("Id")?.Value;
+            if (string.IsNullOrEmpty(idClaim))
+                return Unauthorized("Token inválido.");
+
+            int usuarioId = int.Parse(idClaim);
+
+            var turnos = await contexto.Turno
+        .Include(t => t.cliente)
+        .Include(t => t.servicio)
+            .ThenInclude(sp => sp.servicioBase)
+        .Include(t => t.promo)
+        .Include(t => t.pagos)
+        .Where(t =>
+            t.servicio.usuarioId == usuarioId &&
+            t.estado == EstadoTurno.Confirmado &&
+            !t.pagos.Any()
+        )
+        .Select(t => new TurnoDTO
+        {
+            Id = t.id,
+            Fecha = t.fecha,
+            Descripcion = t.descripcion,
+            Estado = t.estado.ToString(),
+
+            ClienteNombre = t.cliente.nombre + " " + t.cliente.apellido,
+            ServicioNombre = t.servicio.servicioBase.detalle,
+            Categoria = t.servicio.servicioBase.categoria,
+            PrecioBase = t.servicio.precioBase,
+            clienteId = t.clienteId,
+            PromoDescripcion = t.promo != null ? t.promo.descripcion : null,
+            PrecioPromo = t.promo != null ? t.promo.precioNuevo : null,
+
+            Pagos = t.pagos.Select(p => new PagoDTO
+            {
+                Fecha = p.fecha,
+                Monto = p.monto,
+                MetodoDePago = p.metodoDePago
+            }).ToList()
+        })
+        .ToListAsync();
+
+            if (!turnos.Any())
+                return Ok(new List<TurnoDTO>());
+
+            return Ok(turnos);
+        }
+
     }
 }
