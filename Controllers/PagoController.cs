@@ -70,6 +70,10 @@ namespace MiNegocioAPI.Controllers
 
             int usuarioId = int.Parse(idClaim);
 
+            fechaMin = fechaMin.Date;
+            fechaMax = fechaMax.Date.AddDays(1).AddTicks(-1);
+
+
             var query = contexto.Pago
                 .Include(p => p.turno)
                     .ThenInclude(t => t.servicio)
